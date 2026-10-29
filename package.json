@@ -1,0 +1,54 @@
+{
+  "name": "dsh-code-block-quote",
+  "version": "0.1.0",
+  "description": "Quote button beside Copy on every code block in a DSH reply: one click puts the whole fenced block into the composer as a quote chip. · 代码块右上角「引用」按钮：一键把整段代码作为引用插入输入框。",
+  "license": "MIT",
+  "type": "module",
+  "main": "./lib/index.js",
+  "exports": {
+    ".": {
+      "default": "./lib/index.js"
+    },
+    "./client": {
+      "default": "./lib/client.js"
+    },
+    "./cordis.patch.yml": "./cordis.patch.yml",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "lib/**/*.js",
+    "cordis.patch.yml",
+    "README.md"
+  ],
+  "scripts": {
+    "check": "node scripts/check-client.mjs && node scripts/check-roundtrip.mjs",
+    "check:client": "node scripts/check-client.mjs",
+    "check:roundtrip": "node scripts/check-roundtrip.mjs",
+    "test:live": "node scripts/serve-test.mjs"
+  },
+  "keywords": [
+    "dsh",
+    "dsh-plugin",
+    "deepseek-harness",
+    "code-block",
+    "quote",
+    "code-quote",
+    "web-ui"
+  ],
+  "engines": {
+    "dsh": ">=0.2.0-rc.2",
+    "node": ">=18"
+  },
+  "dsh": {
+    "manifestVersion": 1,
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "inject": [
+        "@deepseek-ai/dsh-client-ui-conversation"
+      ]
+    }
+  }
+}

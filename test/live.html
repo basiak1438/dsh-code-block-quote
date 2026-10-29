@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>dsh-code-block-quote — live DOM test</title>
+<style>
+  body { font: 14px/1.5 system-ui, sans-serif; padding: 24px; background: #f5f5f7; }
+  .case { background: #fff; border-radius: 12px; padding: 16px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+  .md-code-block { border: 1px solid #e3e3e6; border-radius: 10px; overflow: hidden; margin-top: 8px; }
+  .banner { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 6px 10px; background: #fafafa; border-bottom: 1px solid #eee; }
+  .info { font-size: 12px; color: #6b6b72; }
+  .actions { display: flex; align-items: center; gap: 4px; }
+  .actions button { border: 0; background: transparent; font: inherit; font-size: 12px; color: #6b6b72; padding: 2px 6px; border-radius: 6px; cursor: pointer; }
+  pre { margin: 0; padding: 12px; overflow: auto; background: #fff; font: 13px/1.6 ui-monospace, monospace; }
+  #log { font: 12px/1.7 ui-monospace, monospace; white-space: pre-wrap; background: #111; color: #d8d8d8; padding: 14px; border-radius: 10px; }
+  .ok { color: #4ade80; } .fail { color: #f87171; }
+</style>
+</head>
+<body>
+
+<h3>1. 复刻真实渲染器结构（block &gt; wrap &gt; banner &gt; [heading, actions]）</h3>
+<div class="case" id="host">
+  <div data-conversation-session="session-live-test" data-conversation-content>
+    <div class="md-code-block">
+      <div class="bannerWrap">
+        <div class="banner" data-code-block-banner>
+          <div class="heading"><span class="language">python</span></div>
+          <div class="actions"><button type="button" class="copy">复制</button></div>
+        </div>
+      </div>
+      <div class="content" data-code-block-content>
+        <pre><code>def greet(name):
+    if name == "":
+        return "你好，陌生人"
+    return f"你好，{name}！"</code></pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+<h3>2. 无语言标签的块</h3>
+<div class="case" id="host2">
+  <div data-conversation-session="session-live-test">
+    <div class="md-code-block">
+      <div class="bannerWrap">
+        <div class="banner" data-code-block-banner>
+          <div class="heading"><span class="language"></span></div>
+          <div class="actions"><button type="button" class="copy">复制</button></div>
+        </div>
+      </div>
+      <div class="content" data-code-block-content>
+        <pre><code>plain text, no tag
+second line</code></pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+<h3>3. 代码内含 ``` 的块（应改用 ~~~ 围栏）</h3>
+<div class="case" id="host3">
+  <div data-conversation-session="session-live-test">
+    <div class="md-code-block">
+      <div class="bannerWrap">
+        <div class="banner" data-code-block-banner>
+          <div class="heading"><span class="language">markdown</span></div>
+          <div class="actions"><button type="button" class="copy">复制</button></div>
+        </div>
+      </div>
+      <div class="content" data-code-block-content>
+        <pre><code>before
+```js
+const a = 1
+```
+after</code></pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="log">running…</div>
+
+<script>
+const lines = [];
+function say(text, cls) {
+  lines.push(cls ? '<span class="' + cls + '">' + text + '</span>' : text);
+  document.getElementById('log').innerHTML = lines.join('\n');
+}
+function ok(text) { say('ok    ' + text, 'ok'); }
+function fail(text) { say('FAIL  ' + text, 'fail'); }
+
+// The host loader shim, as a real package bundle expects it.
+window.__ModuleLoader__ = {
+  load(descriptor) {
+    const require = (name) => {
+      if (name === 'react') return {};
+      throw new Error('unexpected require: ' + name);
+    };
+    window.__plugin = descriptor.factory(require);
+  }
+};
+
+// Record whatever the plugin hands to the composer.
+window.__captured = { attachments: [], texts: [], sources: [] };
+
+const ctx = {
+  effects: [],
+  get(name) {
+    if (name === 'inputTriggers') {
+      return {
+        registerSource(src) {
+          window.__captured.sources.push(src);
+          return () => {};
+        }
+      };
+    }
+    if (name === 'conversation') {
+      return {
+        input: {
+          shell: () => ({
+            actions: { captureInsertion: () => ({ start: 0, end: 0, draftRev: 1 }) },
+            insertReference: (attachment, span) => {
+              window.__captured.attachments.push(attachment);
+              return true;
+            }
+          })
+        }
+      };
+    }
+    return undefined;
+  },
+  effect(fn) {
+    const disposer = fn();
+    ctx.effects.push(disposer);
+    return () => {};
+  },
+  inject(_names, fn) { fn(ctx); }
+};
+
+(async () => {
+  const source = await (await fetch('../lib/client.js')).text();
+  // eslint-disable-next-line no-new-func
+  new Function(source)();
+
+  const plugin = window.__plugin;
+  if (!plugin || typeof plugin.apply !== 'function') { fail('bundle did not register'); return; }
+  ok('bundle registered in a real browser');
+  say('     exports.inject = ' + JSON.stringify(plugin.inject));
+
+  plugin.apply(ctx);
+
+  const buttons = document.querySelectorAll('[data-dsh-code-quote]');
+  if (buttons.length !== 3) { fail('expected 3 buttons, got ' + buttons.length); return; }
+  ok('3 buttons seated (one per code block)');
+
+  // Each must sit inside the action row, after the native copy button.
+  const cases = [
+    { host: 'host',  lang: 'python' },
+    { host: 'host2', lang: '' },
+    { host: 'host3', lang: 'markdown' }
+  ];
+  for (const item of cases) {
+    const actions = document.querySelector('#' + item.host + ' .actions');
+    const ours = actions.querySelector('[data-dsh-code-quote]');
+    if (ours === null) { fail(item.host + ': button is not in the action row'); return; }
+    const copy = actions.querySelector('.copy');
+    if (actions.children[actions.children.length - 1] !== ours) {
+      fail(item.host + ': button is not the last action (copy is at ' + Array.from(actions.children).indexOf(copy) + ')');
+      return;
+    }
+    ok(item.host + ': seated in .actions beside 复制, label="' + ours.textContent + '"');
+  }
+
+  // Click the first one.
+  document.querySelector('#host [data-dsh-code-quote]').click();
+  const first = window.__captured.attachments[0];
+  if (!first) { fail('the click did not reach insertReference'); return; }
+  ok('click inserted a chip; label="' + first.label + '"');
+  say('     ⤷ wire form:\n' + String(first.ref).split('\n').map((l) => '       ' + l).join('\n'));
+
+  const want = '> \u275D ``` python';
+  if (String(first.ref).indexOf(want) < 0) { fail('missing ' + want); return; }
+  ok('fence carries the language tag from the banner');
+
+  // Untagged block: no info string.
+  document.querySelector('#host2 [data-dsh-code-quote]').click();
+  const second = window.__captured.attachments[1];
+  if (!second) { fail('untagged block did not insert'); return; }
+  if (String(second.ref).indexOf('> \u275D ```') < 0) { fail('untagged fence is wrong'); return; }
+  if (String(second.ref).indexOf('> \u275D ``` ') >= 0) { fail('untagged fence has a trailing space/info'); return; }
+  ok('untagged block emits a bare fence');
+
+  // Nested-fence block: ~~~ instead of ```.
+  document.querySelector('#host3 [data-dsh-code-quote]').click();
+  const third = window.__captured.attachments[2];
+  if (!third) { fail('nested-fence block did not insert'); return; }
+  if (String(third.ref).indexOf('> \u275D ~~~ markdown') < 0) { fail('nested fence did not switch to ~~~'); return; }
+  ok('code containing ``` switches to a ~~~ fence');
+
+  // The codec must be stateless.
+  const src = window.__captured.sources[0];
+  const round = await src.codec.serialize(third.ref);
+  if (round !== third.ref) { fail('codec changed the ref'); return; }
+  ok('codec round-trips the ref unchanged');
+
+  // A re-render must re-seat, not duplicate.
+  document.querySelector('#host .actions').innerHTML = '<button type="button" class="copy">复制</button>';
+  await new Promise((resolve) => setTimeout(resolve, 60));
+  const after = document.querySelectorAll('#host [data-dsh-code-quote]').length;
+  if (after !== 1) { fail('after a re-render there are ' + after + ' buttons'); return; }
+  ok('a re-render re-seats exactly one button (MutationObserver worked)');
+
+  // Teardown.
+  for (const dispose of ctx.effects) dispose();
+  await new Promise((resolve) => setTimeout(resolve, 30));
+  const left = document.querySelectorAll('[data-dsh-code-quote]').length;
+  if (left !== 0) { fail('teardown left ' + left + ' buttons'); return; }
+  ok('teardown removes every button');
+
+  say('\nALL CHECKS PASSED', 'ok');
+  document.title = 'PASS dsh-code-block-quote';
+})().catch((error) => {
+  fail(String(error && error.stack || error));
+  document.title = 'FAIL dsh-code-block-quote';
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,7 @@
+# Bundle layer for dsh-code-block-quote.
+#
+# Used when this package appears in a profile's dsh.profile.bundles list: the
+# row below inserts the plugin's Loader entry into the composed tree.
+- insert:
+    - id: code-block-quote
+      name: dsh-code-block-quote

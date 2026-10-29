@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>引用按钮 — 视觉预览</title>
+<style>
+  body { margin: 0; padding: 22px; background: #f7f7f9; font: 14px/1.6 system-ui, "Segoe UI", sans-serif; }
+  h4 { margin: 0 0 10px; font-size: 13px; font-weight: 600; color: #45454d; letter-spacing: .01em; }
+  .card { background: #fff; border-radius: 12px; padding: 14px 16px; margin-bottom: 14px; box-shadow: 0 1px 2px rgba(0,0,0,.06), 0 0 0 1px rgba(0,0,0,.03); }
+  .md-code-block { border: 1px solid #e6e6ea; border-radius: 10px; overflow: hidden; }
+  .bannerWrap { }
+  .banner { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 5px 8px 5px 12px; background: #fbfbfc; border-bottom: 1px solid #eeeef2; }
+  .heading { display: flex; align-items: center; gap: 8px; min-width: 0; }
+  .language { font-size: 12px; color: #8a8a93; font-family: ui-monospace, monospace; }
+  .actions { display: flex; align-items: center; gap: 2px; }
+  .actions button { border: 0; background: transparent; font: inherit; font-size: 12px; color: #8a8a93; height: 22px; padding: 0 8px; border-radius: 6px; cursor: pointer; white-space: nowrap; }
+  .actions button:hover { background: rgba(127,127,127,.14); color: #1c1c20; }
+  .actions button[data-dsh-code-quote] { color: #6b6b72; }
+  .actions button[data-dsh-code-quote]:hover { color: #4d6bfe; }
+  pre { margin: 0; padding: 12px 14px; overflow: auto; background: #fff; font: 12.5px/1.65 ui-monospace, "Cascadia Code", monospace; color: #24292f; }
+  .note { font-size: 12px; color: #8a8a93; margin: 8px 0 0; }
+  .pill { display: inline-block; padding: 2px 8px; border-radius: 999px; background: #eef1ff; color: #4d6bfe; font-size: 11.5px; margin-left: 6px; }
+</style>
+</head>
+<body>
+
+<div class="card">
+  <h4>普通代码块 <span class="pill">引用｜复制</span></h4>
+  <div class="md-code-block">
+    <div class="bannerWrap">
+      <div class="banner" data-code-block-banner>
+        <div class="heading"><span class="language">python</span></div>
+        <div class="actions">
+          <button type="button" data-dsh-code-quote="1" title="将整段代码作为引用插入输入框">引用</button>
+          <button type="button" class="copy">复制</button>
+        </div>
+      </div>
+    </div>
+    <div class="content" data-code-block-content>
+      <pre><code>def greet(name):
+    if name == "":
+        return "你好，陌生人"
+    return f"你好，{name}！"</code></pre>
+    </div>
+  </div>
+  <p class="note">点「引用」→ 整块进入输入框，可继续在下方写问题。</p>
+</div>
+
+<div class="card">
+  <h4>shell 代码块</h4>
+  <div class="md-code-block">
+    <div class="bannerWrap">
+      <div class="banner" data-code-block-banner>
+        <div class="heading"><span class="language">bash</span></div>
+        <div class="actions">
+          <button type="button" data-dsh-code-quote="1" title="将整段代码作为引用插入输入框">引用</button>
+          <button type="button" class="copy">复制</button>
+        </div>
+      </div>
+    </div>
+    <div class="content" data-code-block-content>
+      <pre><code>dsh plugin --profile desktop add dshmarket
+dsh plugin --profile desktop list --depth 0</code></pre>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <h4>插入后的引用形态</h4>
+  <div class="md-code-block">
+    <div class="bannerWrap">
+      <div class="banner" data-code-block-banner>
+        <div class="heading"><span class="language">markdown</span></div>
+        <div class="actions">
+          <button type="button" data-dsh-code-quote="1" title="将整段代码作为引用插入输入框">引用</button>
+          <button type="button" class="copy">复制</button>
+        </div>
+      </div>
+    </div>
+    <div class="content" data-code-block-content>
+      <pre><code>&gt; ❝ ``` python
+&gt; def greet(name):
+&gt;     return "hi " + name
+&gt; ```</code></pre>
+    </div>
+  </div>
+  <p class="note">这是模型实际收到的内容：带语言标签的围栏，包在引用块里。</p>
+</div>
+
+<div class="card">
+  <h4>用户发送消息气泡展示对比（方案 B 实际效果）</h4>
+  <p class="note" style="margin-bottom: 12px;">自动过滤掉 <code>※ 引自第 16 轮 │q1:...</code> 坐标乱码，告别刺眼全蓝字，超长代码自动折叠：</p>
+
+  <div style="background: #18181b; border-radius: 12px; padding: 14px; max-width: 600px; color: #f4f4f5;">
+    <div style="font-size: 12px; color: #a1a1aa; margin-bottom: 6px;">我的发言（带引用）：</div>
+    <div id="test-quote-container"></div>
+    <div style="margin-top: 10px; font-size: 13.5px; color: #fafafa;">当前使用引用（包括ui-cli和刚刚的新插件），我自己发送的对话框显示如图所示，超长且无折叠；讨论解决方案</div>
+  </div>
+</div>
+
+<script type="module">
+  const rawSample = `bash
+引用
+cd C:\\Users\\admin\\Documents\\deepseek-harness\\default-workspace\\dsh-code-block-quote
+npm run check        # 两个离线检查
+npm run test:live    # 起服务，浏览器打开终端打印的 URL
+“ \`\`\` bash
+cd C:\\Users\\admin\\Documents\\deepseek-harness\\default-workspace\\dsh-code-block-quote
+npm run check        # 两个离线检查
+npm run test:live    # 起服务，浏览器打开终端打印的 URL
+“
+※ 引自第 16 轮
+│q1:eyJ2IjoxLCJzIjoic2Vzc2lvbi02YmExOGY1NC0zZjE0LTRhOGYtODIxNC02NTYxN2RlZWFlNmYiLCJhIjoiZGF0YS1jaGF0LWFuY2hvci1rZXkiLCJrIjoiMTQ6YXNzaXN0YW50LXN0ZXAxNjoxNiIsInQiOiIxNiIsIm4iOjJ9`;
+
+  const source = await (await fetch('../lib/client.js')).text();
+  let mod = null;
+  window.__ModuleLoader__ = {
+    load(desc) { mod = desc.factory(() => ({})); }
+  };
+  new Function(source)();
+  const card = mod.__testing.createFoldCard(rawSample, document);
+  if (card) {
+    document.getElementById('test-quote-container').appendChild(card);
+  }
+</script>
+
+<style>
+  /* 载入插件内置的折叠卡片样式 */
+  .dsh-quote-card{
+    display:block;margin:6px 0 8px 0;border-radius:8px;
+    border:1px solid rgba(255,255,255,.15);
+    background:rgba(255,255,255,.05);
+    overflow:hidden;box-sizing:border-box;max-width:100%;
+    transition:border-color .15s ease;
+  }
+  .dsh-quote-card:hover{border-color:rgba(255,255,255,.25);}
+  .dsh-quote-card-header{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:6px 12px;background:rgba(255,255,255,.03);
+    border-bottom:1px solid rgba(255,255,255,.08);
+    user-select:none;
+  }
+  .dsh-quote-card-title{
+    display:flex;align-items:center;gap:6px;font-size:12px;
+    color:#a1a1aa;
+  }
+  .dsh-quote-card-icon{font-size:13px;color:#60a5fa;}
+  .dsh-quote-card-label{font-weight:500;}
+  .dsh-quote-card-toggle{
+    border:0;background:transparent;color:#60a5fa;
+    font-size:11.5px;cursor:pointer;padding:2px 8px;border-radius:4px;
+    transition:background-color .12s ease;
+  }
+  .dsh-quote-card-toggle:hover{background:rgba(255,255,255,.1);}
+  .dsh-quote-card-body{position:relative;overflow:hidden;}
+  .dsh-quote-card[data-folded="true"] .dsh-quote-card-body{max-height:76px;}
+  .dsh-quote-card[data-folded="true"] .dsh-quote-card-body::after{
+    content:"";position:absolute;left:0;right:0;bottom:0;height:36px;
+    background:linear-gradient(to bottom,transparent,#18181b);
+    pointer-events:none;
+  }
+  .dsh-quote-card-body pre{
+    margin:0;padding:8px 12px;
+    font-family:ui-monospace,"Cascadia Code",SFMono-Regular,Menlo,Monaco,Consolas,monospace;
+    font-size:12.5px;line-height:1.55;
+    color:#e4e4e7;
+    white-space:pre-wrap;word-break:break-word;background:transparent;
+  }
+</style>
+</body>
+</html>
