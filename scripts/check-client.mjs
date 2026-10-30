@@ -51,6 +51,7 @@ class FakeNode {
       }
     }
     this._text = ''
+    this.value = ''
     this.listeners = new Map()
     this.className = ''
   }
@@ -59,10 +60,19 @@ class FakeNode {
     const self = this
     return {
       add: (name) => {
-        self.className = (self.className ? self.className + ' ' : '') + name
+        if (!self.classList.contains(name)) {
+          self.className = (self.className ? self.className + ' ' : '') + name
+        }
+      },
+      remove: (name) => {
+        self.className = self.className.split(/\s+/u).filter((c) => c && c !== name).join(' ')
       },
       contains: (name) => self.className.split(/\s+/u).includes(name)
     }
+  }
+
+  scrollIntoView() {
+    this._scrolledIntoView = true
   }
 
   appendChild(child) {
@@ -245,6 +255,8 @@ function makeDocument() {
     head,
     documentElement: html,
     createElement: (tag) => new FakeNode(tag),
+    addEventListener: () => {},
+    removeEventListener: () => {},
     querySelector: (selector) => {
       if (matchesSelector(body, selector)) return body
       return body.querySelector(selector)
@@ -664,6 +676,198 @@ function buildCodeBlock(doc, lang, code) {
     process.exit(1)
   }
   console.log('ok    teardown removes cards and restores original elements')
+}
+
+/* ---------------------------------------------------------------- *
+ * 6. Turn provenance & Jump-to-source Engine
+ * ---------------------------------------------------------------- */
+
+{
+  const doc = makeDocument()
+
+  // 1. Simulate a turn row in chat history containing a python code block
+  const turn16Row = doc.createElement('div')
+  turn16Row.setAttribute('data-chat-turn', '16')
+  const originalCode = 'def calculate_taxes(income):\n    return income * 0.2'
+  const sourceBlock = buildCodeBlock(doc, 'python', originalCode)
+  turn16Row.appendChild(sourceBlock)
+  doc.body.appendChild(turn16Row)
+
+  // 2. Simulate a subsequent turn with a user message quoting turn 16
+  const turn17Row = doc.createElement('div')
+  turn17Row.setAttribute('data-chat-turn', '17')
+  const rawQuoteWithTurn = [
+    '> \u275D ``` python',
+    '> def calculate_taxes(income):',
+    '>     return income * 0.2',
+    '> ```',
+    '> \u203B 第 16 轮'
+  ].join('\n')
+
+  const userBubble = doc.createElement('div')
+  userBubble.className = 'LOmM4q_bubble'
+  const btwNode = doc.createElement('span')
+  btwNode.className = 'btw-official-quote-node'
+  btwNode.setAttribute('data-quote-preview', '')
+  btwNode.textContent = rawQuoteWithTurn
+  userBubble.appendChild(btwNode)
+  turn17Row.appendChild(userBubble)
+  doc.body.appendChild(turn17Row)
+
+  const fakeWindow = {
+    document: doc,
+    MutationObserver: class {
+      observe() {}
+      disconnect() {}
+    },
+    setTimeout: (fn) => 0,
+    __ModuleLoader__: {
+      load(descriptor) {
+        fakeWindow.__loaded = descriptor.factory(() => ({}))
+      }
+    }
+  }
+
+  const mod = loadBundle(fakeWindow)
+  const ctx = {
+    effects: [],
+    get: () => undefined,
+    effect(fn) {
+      ctx.effects.push(fn())
+      return () => {}
+    },
+    inject: (_names, fn) => fn(ctx)
+  }
+
+  mod.apply(ctx)
+
+  // Card generated
+  const card = turn17Row.querySelector('[data-dsh-quote-card]')
+  if (!card) {
+    console.error('FAIL  card was not created for quote with turn')
+    process.exit(1)
+  }
+  if (card.getAttribute('data-quote-turn') !== '16') {
+    console.error('FAIL  card did not capture data-quote-turn="16", got:', card.getAttribute('data-quote-turn'))
+    process.exit(1)
+  }
+  console.log('ok    card captures data-quote-turn="16" from clean metadata')
+
+  // Card title shows turn
+  const label = card.querySelector('.dsh-quote-card-label')?.textContent || ''
+  if (!label.includes('16')) {
+    console.error('FAIL  card title does not display turn 16, got:', label)
+    process.exit(1)
+  }
+  console.log('ok    card title shows "第 16 轮" breadcrumb')
+
+  // Jump button exists
+  const jumpBtn = card.querySelector('.dsh-quote-card-jump')
+  if (!jumpBtn) {
+    console.error('FAIL  jump button .dsh-quote-card-jump missing on card')
+    process.exit(1)
+  }
+  console.log('ok    jump button is present on card')
+
+  // Click Jump: sourceBlock should be targeted, scrolled into view, and flashed
+  jumpBtn.dispatch('click')
+
+  if (!sourceBlock._scrolledIntoView) {
+    console.error('FAIL  jump click did not scroll sourceBlock into view')
+    process.exit(1)
+  }
+  if (!sourceBlock.classList.contains('dsh-quote-target-flash')) {
+    console.error('FAIL  sourceBlock did not receive dsh-quote-target-flash class')
+    process.exit(1)
+  }
+  console.log('ok    clicking jump scrolled sourceBlock into view with flash highlight')
+
+  for (const dispose of ctx.effects) dispose()
+}
+
+/* ---------------------------------------------------------------- *
+ * 7. BTW-style Selection Toolbar & Side Chat Channel (Scheme B)
+ * ---------------------------------------------------------------- */
+
+{
+  const doc = makeDocument()
+
+  // 1. Simulate a chat message container with a turn
+  const row = doc.createElement('div')
+  row.setAttribute('data-chat-turn', '16')
+  row.setAttribute('data-conversation-content', '')
+  const prose = doc.createElement('p')
+  prose.textContent = '这是一个关于重构计算税费算法的重要说明。'
+  row.appendChild(prose)
+  doc.body.appendChild(row)
+
+  // 2. Simulate sidechat composer input in sidebar
+  const sideTextarea = doc.createElement('textarea')
+  sideTextarea.className = '_4BEzFa_sidechatComposerInput'
+  doc.body.appendChild(sideTextarea)
+
+  const fakeWindow = {
+    document: doc,
+    innerWidth: 1280,
+    innerHeight: 800,
+    addEventListener: () => {},
+    removeEventListener: () => {},
+    MutationObserver: class {
+      observe() {}
+      disconnect() {}
+    },
+    setTimeout: (fn) => 0,
+    __ModuleLoader__: {
+      load(descriptor) {
+        fakeWindow.__loaded = descriptor.factory(() => ({}))
+      }
+    }
+  }
+
+  const mod = loadBundle(fakeWindow)
+  const { showSelectionBar, dismissSelectionBar } = mod.__testing
+
+  const mockRange = {
+    getBoundingClientRect: () => ({ left: 200, top: 150, width: 80, height: 20, bottom: 170 })
+  }
+
+  // Pop toolbar
+  showSelectionBar(mockRange, '重构计算税费算法', prose)
+
+  const toolbar = doc.querySelector('.dsh-selection-toolbar')
+  if (!toolbar) {
+    console.error('FAIL  selection toolbar was not mounted')
+    process.exit(1)
+  }
+  console.log('ok    BTW-style selection toolbar mounted with pill shape')
+
+  const addBtn = toolbar.querySelector('.dsh-selection-btn-add')
+  const sideBtn = toolbar.querySelector('.dsh-selection-btn-side')
+  if (!addBtn || !sideBtn) {
+    console.error('FAIL  selection buttons missing in toolbar')
+    process.exit(1)
+  }
+  console.log('ok    toolbar contains both [添加到对话] and [侧边对话] buttons')
+
+  // Click Side Chat (Scheme B): payload should be written into sideTextarea
+  sideBtn.dispatch('click')
+
+  if (!sideTextarea.value || !sideTextarea.value.includes('重构计算税费算法')) {
+    console.error('FAIL  side chat button did not write quote to sideTextarea, got:', sideTextarea.value)
+    process.exit(1)
+  }
+  if (!sideTextarea.value.includes('第 16 轮')) {
+    console.error('FAIL  side chat payload missing turn 16 marker, got:', sideTextarea.value)
+    process.exit(1)
+  }
+  console.log('ok    clicking [侧边对话] wrote clean fenced quote with turn 16 to sidechat input')
+
+  // Toolbar dismissed after click
+  if (doc.querySelector('.dsh-selection-toolbar') !== null) {
+    console.error('FAIL  toolbar was not dismissed after action click')
+    process.exit(1)
+  }
+  console.log('ok    toolbar dismissed cleanly after action')
 }
 
 console.log('\nall checks passed')
