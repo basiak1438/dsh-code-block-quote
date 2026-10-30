@@ -6,13 +6,13 @@
   <a href="https://opensource.org/licenses/MIT"><img alt="License: MIT" src="https://img.shields.io/badge/License-MIT-yellow.svg" /></a>
   <a href="https://www.npmjs.com/package/@deepseek-ai/dsh"><img alt="DSH >=0.2.0-rc.2" src="https://img.shields.io/badge/DSH-%3E%3D0.2.0--rc.2-4d6bfe" /></a>
   <img alt="Zero Dependencies" src="https://img.shields.io/badge/dependencies-0-success" />
-  <img alt="Built with DSH Vibe Coding" src="https://img.shields.io/badge/Built_with-DSH_Vibe_Coding-8b5cf6" />
+  <img alt="Built on & with DeepSeek Harness" src="https://img.shields.io/badge/Built_on_%26_with-DeepSeek_Harness-6366f1" />
 </div>
 
 > 在 DeepSeek Harness (DSH) 中，无论是**一键引用整段代码块**，还是在回答正文里**划选任意文本片段**，都可以将其作为引用胶囊（Reference Chip）快速插入主对话或右侧栏的独立侧边对话。
 > 发送后的消息气泡会自动将引文（含代码引用与普通文本引用）渲染为带 **「📍 定位」** 与 **「展开 ▼ / 收起 ▲」** 的可折叠卡片，过滤内部坐标冗余信息，并在页面刷新或客户端重启后依然支持平滑定位回原文。
 >
-> 💡 **项目说明**：本插件由 **DeepSeek Harness (DSH)** 全程通过 **Vibe Coding**（自然语言交互式结对开发、自动化测试与真机视觉验收）构建完成。
+> 💡 **构建说明**：本插件为 **DeepSeek Harness (DSH)** 原生自举（Self-Hosted）项目，采用 **AI 原生协同工程（Agentic Software Engineering）** 模式完成——在 DSH 环境中由开发者定义交互规范与验收标准，DSH 智能体全程执行架构设计、源码实现、离线假 DOM 单元测试及 Chromium 真机渲染验证的完整研发闭环。
 
 ---
 
@@ -149,4 +149,4 @@ npm run test:live
 
 ## 📄 开源许可
 
-[MIT](./package.json) · Built with **DeepSeek Harness (DSH)** Vibe Coding
+[MIT](./package.json) · Built on & with **DeepSeek Harness (DSH)**
