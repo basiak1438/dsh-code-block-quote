@@ -1,8 +1,16 @@
 {
   "name": "dsh-code-block-quote",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "All-in-one Smart Quote Suite for DSH: code block quote button, BTW-style floating selection toolbar (main/side chat), collapsible cards, clean metadata, and permanent jump back. · DSH 全场景智能引用套件：代码块一键引用、全局划选悬浮药丸（发往主对话/侧边对话）、长引用自动折叠与乱码清洗、重开页面永久双向定位。",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/basiak1438/dsh-code-block-quote.git"
+  },
+  "homepage": "https://github.com/basiak1438/dsh-code-block-quote#readme",
+  "bugs": {
+    "url": "https://github.com/basiak1438/dsh-code-block-quote/issues"
+  },
   "type": "module",
   "main": "./lib/index.js",
   "exports": {

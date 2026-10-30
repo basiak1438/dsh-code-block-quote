@@ -232,10 +232,16 @@ function matchesOne(node, selector) {
       if (node.getAttribute(test) === null) return false
       continue
     }
-    const name = test.slice(0, at)
-    const raw = test.slice(at + 1)
+    const isContains = test.charAt(at - 1) === '*'
+    const name = (isContains ? test.slice(0, at - 1) : test.slice(0, at)).trim()
+    const raw = test.slice(at + 1).trim()
     const value = raw.replace(/^["']|["']$/gu, '')
-    if (node.getAttribute(name) !== value) return false
+    const actual = name === 'class' ? node.className : (node.getAttribute(name) ?? '')
+    if (isContains) {
+      if (!String(actual).includes(value)) return false
+    } else if (actual !== value) {
+      return false
+    }
   }
 
   if (lastChild) {
@@ -868,6 +874,89 @@ function buildCodeBlock(doc, lang, code) {
     process.exit(1)
   }
   console.log('ok    toolbar dismissed cleanly after action')
+}
+
+/* ---------------------------------------------------------------- *
+ * 8. Native _plainRun bubble enhancement (both prose & code quotes)
+ * ---------------------------------------------------------------- */
+
+{
+  const doc = makeDocument()
+
+  const convRoot = doc.createElement('div')
+  convRoot.setAttribute('data-conversation-content', '')
+  const bubble = doc.createElement('div')
+  bubble.className = 'LOmM4q_bubble'
+  const plainRun = doc.createElement('span')
+  plainRun.className = '_plainRun_fbulu_6'
+  plainRun.textContent = [
+    '> \u275D 侧边对话（better-sidebar）写入方式不对：',
+    '> 之前写的是用 DOM 选择器去找侧边栏的 <textarea> 并直接改 input.value。',
+    '> 但查了 dsh-better-sidebar 源码发现：第一，如果侧边对话标签页还没打开，DOM 里根本没有这个 <textarea>。',
+    '> 第二，那个输入框是 React 受控组件。',
+    '> \u203B 第 34 轮',
+    '',
+    '测试'
+  ].join('\n')
+
+  bubble.appendChild(plainRun)
+  convRoot.appendChild(bubble)
+  doc.body.appendChild(convRoot)
+
+  const fakeWindow = {
+    document: doc,
+    innerWidth: 1280,
+    innerHeight: 800,
+    addEventListener: () => {},
+    removeEventListener: () => {},
+    MutationObserver: class {
+      observe() {}
+      disconnect() {}
+    },
+    setTimeout: () => 0,
+    __ModuleLoader__: {
+      load(descriptor) {
+        fakeWindow.__loaded = descriptor.factory(() => ({}))
+      }
+    }
+  }
+
+  const mod = loadBundle(fakeWindow)
+  const ctx = {
+    effects: [],
+    get: () => undefined,
+    effect(fn) {
+      ctx.effects.push(fn())
+      return () => {}
+    },
+    inject: (_names, fn) => fn(ctx)
+  }
+
+  mod.apply(ctx)
+
+  const card = bubble.querySelector('[data-dsh-quote-card]')
+  if (!card) {
+    console.error('FAIL  plainRun quote was not converted into a fold card')
+    process.exit(1)
+  }
+  console.log('ok    native _plainRun quote converted into a collapsible card')
+
+  const userText = bubble.querySelector('.dsh-quote-user-text')
+  if (!userText || userText.textContent !== '测试') {
+    console.error('FAIL  trailing user text "测试" not preserved separately, got:', userText?.textContent)
+    process.exit(1)
+  }
+  console.log('ok    trailing user prompt "测试" preserved cleanly below the card')
+
+  const jumpBtn = card.querySelector('.dsh-quote-card-jump')
+  const toggleBtn = card.querySelector('.dsh-quote-card-toggle')
+  if (!jumpBtn || !toggleBtn) {
+    console.error('FAIL  card missing jump or fold toggle button')
+    process.exit(1)
+  }
+  console.log('ok    both [📍 定位] and [展开 ▼] buttons present on native plainRun card')
+
+  for (const dispose of ctx.effects) dispose()
 }
 
 console.log('\nall checks passed')
